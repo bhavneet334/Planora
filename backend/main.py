@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
+from routers.plans import router as plans_router
+
 app = FastAPI(title="Planora", version="1.0.0")
 
 app.add_middleware(
@@ -11,6 +13,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+app.include_router(plans_router)
+
 
 @app.get("/")
 def root():
