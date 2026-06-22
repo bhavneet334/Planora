@@ -1,4 +1,4 @@
-from typing import NotRequired, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 from langgraph.graph import END, StateGraph
 
@@ -6,6 +6,9 @@ from schemas.event import EventInput, GeneratedPlan
 from agents.venue_agent import run_venue_agent
 from agents.budget_agent import run_budget_agent
 from agents.details_agent import run_details_agent
+from agents.validator import validate_budget
+
+MAX_BUDGET_RETRIES = 2
 
 
 class PlanState(TypedDict):
@@ -16,6 +19,8 @@ class PlanState(TypedDict):
     vendor_suggestions: NotRequired[list[str]]
     checklist: NotRequired[list[str]]
     timeline: NotRequired[list[dict]]
+    validation_passed: NotRequired[bool]
+    budget_retry_count: NotRequired[int]
 
 
 def venue_node(state: PlanState) -> dict:
@@ -28,7 +33,15 @@ def venue_node(state: PlanState) -> dict:
 
 def budget_node(state: PlanState) -> dict:
     result = run_budget_agent(state["event"])
-    return {"budget_breakdown": result["budget_breakdown"]}
+
+    retry_count = state.get("budget_retry_count", 0)
+    if state.get("validation_passed") is False:
+        retry_count+=1
+
+    return {"budget_breakdown": result["budget_breakdown"], 
+            "budget_retry_count" : retry_count,
+            "validation_passed" : False
+           }
 
 
 def details_node(state: PlanState) -> dict:
@@ -40,17 +53,34 @@ def details_node(state: PlanState) -> dict:
     }
 
 
+def validator_node(state: PlanState) -> dict:
+    is_valid = validate_budget(state["event"], state.get("budget_breakdown", []))
+    return {"validation_passed": is_valid}
+
+
+def route_after_validation(state: PlanState) -> Literal["budget", "__end__"]:
+    if state.get("validation_passed"):
+        return "__end__"
+
+    if state.get("budget_retry_count", 0) >= MAX_BUDGET_RETRIES:
+        return "__end__"
+
+    return "budget"
+
+
 def build_graph():
     graph = StateGraph(PlanState)
 
     graph.add_node("venue", venue_node)
     graph.add_node("budget", budget_node)
     graph.add_node("details", details_node)
+    graph.add_node("validator", validator_node)
 
     graph.set_entry_point("venue")
     graph.add_edge("venue", "budget")
     graph.add_edge("budget", "details")
-    graph.add_edge("details", END)
+    graph.add_edge("details", "validator")
+    graph.add_conditional_edges("validator", route_after_validation)
 
     return graph.compile()
 
