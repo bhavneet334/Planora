@@ -1,48 +1,7 @@
-import json
 import os
 
-from openai import OpenAI
-
 from schemas.event import BudgetItem, EventInput, GeneratedPlan, TimelineItem
-
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-GROQ_MODEL = "llama-3.3-70b-versatile"
-
-
-def _build_prompt(event: EventInput) -> str:
-    return f"""
-You are an expert event planner. Create a practical starter plan for this event.
-
-Event details:
-- Event type: {event.event_type}
-- City: {event.city}
-- Date: {event.date}
-- Guest count: {event.guest_count}
-- Budget: ${event.budget:,.0f}
-- Vibe: {event.vibe}
-- Food preferences: {event.food_preferences}
-- Indoor/Outdoor: {event.indoor_outdoor}
-
-Return ONLY valid JSON with this exact structure:
-{{
-  "event_summary": "string",
-  "venue_ideas": ["string", "string", "string"],
-  "vendor_suggestions": ["string", "string", "string", "string"],
-  "budget_breakdown": [
-    {{ "category": "string", "amount": number, "notes": "string" }}
-  ],
-  "checklist": ["string", "string", "string", "string", "string"],
-  "timeline": [
-    {{ "when": "string", "task": "string" }}
-  ]
-}}
-
-Rules:
-- Budget breakdown amounts should add up to roughly the total budget.
-- Give realistic, city-specific suggestions (general types, not fake business names).
-- Keep checklist to 5 items and timeline to 5 items.
-- No markdown, no extra text — JSON only.
-"""
+from agents.orchestrator import run_orchestrator
 
 
 def _generate_mock_plan(event: EventInput) -> GeneratedPlan:
@@ -111,34 +70,6 @@ def _generate_mock_plan(event: EventInput) -> GeneratedPlan:
     )
 
 
-def _generate_ai_plan(event: EventInput) -> GeneratedPlan:
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY is not set. Add it to backend/.env")
-
-    client = OpenAI(api_key=api_key, base_url=GROQ_BASE_URL)
-
-    response = client.chat.completions.create(
-        model=GROQ_MODEL,
-        messages=[
-            {
-                "role": "system",
-                "content": "You return structured event plans as JSON only.",
-            },
-            {"role": "user", "content": _build_prompt(event)},
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.7,
-    )
-
-    content = response.choices[0].message.content
-    if not content:
-        raise ValueError("AI returned an empty response")
-
-    data = json.loads(content)
-    return GeneratedPlan.model_validate(data)
-
-
 def generate_plan(event: EventInput) -> GeneratedPlan:
     use_mock = os.getenv("USE_MOCK_PLAN", "").lower() in {"1", "true", "yes"}
 
@@ -146,6 +77,6 @@ def generate_plan(event: EventInput) -> GeneratedPlan:
         return _generate_mock_plan(event)
 
     try:
-        return _generate_ai_plan(event)
+        return run_orchestrator(event)
     except Exception:
         return _generate_mock_plan(event)
