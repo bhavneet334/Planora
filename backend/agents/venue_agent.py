@@ -18,7 +18,7 @@ def _format_researched_venues(venues : list[dict]) -> str:
 
 def run_venue_agent(
         event: EventInput,
-        researched_venues = list[dict] | None=None,
+        researched_venues: list[dict] | None=None,
     ) -> dict:
          venue_context = _format_researched_venues(researched_venues or [])
          prompt = f"""

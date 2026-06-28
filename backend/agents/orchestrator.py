@@ -1,6 +1,6 @@
 from typing import Literal, NotRequired, TypedDict
 
-from langgraph.graph import END, StateGraph
+from langgraph.graph import StateGraph
 
 from schemas.event import EventInput, GeneratedPlan
 from agents.venue_research import run_venue_research
@@ -30,7 +30,7 @@ def venue_research_node(state:PlanState) -> dict:
 
 
 def venue_node(state: PlanState) -> dict:
-    researched = state.get["researched_venues",[]]
+    researched = state.get("researched_venues", [])
     result = run_venue_agent(state["event"], researched_venues=researched)
     return {
         "event_summary": result["event_summary"],
