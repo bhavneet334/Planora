@@ -32,10 +32,18 @@ const FEATURES = [
   "Checklist & timeline",
 ];
 
+const LOADING_STEPS = [
+  "Searching venues (cache or Google Places)…",
+  "Selecting venues and writing summary…",
+  "Building budget breakdown…",
+  "Adding vendors, checklist, and timeline…",
+];
+
 function App() {
   const [form, setForm] = useState<EventInput>(emptyForm);
   const [plan, setPlan] = useState<GeneratedPlan | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   function updateField<K extends keyof EventInput>(
@@ -64,9 +72,25 @@ function App() {
     }
   }, [plan]);
 
+  useEffect(() => {
+    if (!loading) {
+      setLoadingStep(0);
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setLoadingStep((prev) =>
+        prev < LOADING_STEPS.length - 1 ? prev + 1 : prev,
+      );
+    }, 3500);
+
+    return () => window.clearInterval(interval);
+  }, [loading]);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setLoadingStep(0);
     setError(null);
 
     try {
@@ -108,81 +132,87 @@ function App() {
       </header>
 
       <form className="card form event-form" onSubmit={handleSubmit}>
-        <h2>Event Details</h2>
+        <div className="form-header">
+          <h2>Event details</h2>
+          <button type="button" className="btn-link" onClick={fillExample}>
+            Fill example
+          </button>
+        </div>
 
-        <label>
-          Event type
-          <input
-            value={form.event_type}
-            onChange={(e) => updateField("event_type", e.target.value)}
-            placeholder="Birthday party"
-          />
-        </label>
+        <div className="form-grid">
+          <label>
+            Event type
+            <input
+              value={form.event_type}
+              onChange={(e) => updateField("event_type", e.target.value)}
+              placeholder="Birthday party"
+            />
+          </label>
 
-        <label>
-          City
-          <input
-            value={form.city}
-            onChange={(e) => updateField("city", e.target.value)}
-            placeholder="Toronto"
-            required
-          />
-        </label>
+          <label>
+            City
+            <input
+              value={form.city}
+              onChange={(e) => updateField("city", e.target.value)}
+              placeholder="Toronto"
+              required
+            />
+          </label>
 
-        <label>
-          Date
+          <label>
+            Date
           <input
             type="date"
             value={form.date}
             onChange={(e) => updateField("date", e.target.value)}
             required
-          />
-        </label>
+            />
+          </label>
 
-        <label>
-          Guest count
+          <label>
+            Guest count
           <input
             type="number"
             min={1}
             value={form.guest_count}
             onChange={(e) => updateField("guest_count", Number(e.target.value))}
             required
-          />
-        </label>
+            />
+          </label>
 
-        <label>
-          Budget
+          <label>
+            Budget
           <input
             type="number"
             min={1}
             value={form.budget}
             onChange={(e) => updateField("budget", Number(e.target.value))}
             required
-          />
-        </label>
+            />
+          </label>
 
-        <label>
-          Vibe
+          <label>
+            Vibe
           <input
             value={form.vibe}
             onChange={(e) => updateField("vibe", e.target.value)}
             placeholder="Elegant and cozy"
             required
-          />
-        </label>
+            />
+          </label>
 
-        <label>
-          Food preferences
+          <label>
+            Food preferences
           <input
             value={form.food_preferences}
             onChange={(e) => updateField("food_preferences", e.target.value)}
             placeholder="Vegetarian options"
             required
-          />
-        </label>
+            />
+          </label>
 
-        <label>
-          Indoor / Outdoor
+          <label>
+            Indoor / Outdoor
           <select
             value={form.indoor_outdoor}
             onChange={(e) => updateField("indoor_outdoor", e.target.value)}
@@ -191,10 +221,29 @@ function App() {
             <option value="Indoor">Indoor</option>
           </select>
         </label>
+        </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Generating..." : "Generate plan"}
+        <button type="submit" className="btn-primary" disabled={loading}>
+          {loading ? "Generating plan…" : "Generate plan"}
         </button>
+
+        {loading && (
+          <div className="loading-panel" aria-live="polite">
+            <div className="loading-bar">
+              <div
+                className="loading-bar-fill"
+                style={{
+                  width: `${((loadingStep + 1) / LOADING_STEPS.length) * 100}%`,
+                }}
+              />
+            </div>
+            <p className="loading-step">{LOADING_STEPS[loadingStep]}</p>
+            <p className="loading-hint">
+              Plans usually take 15–30 seconds while agents run.
+            </p>
+          </div>
+        )}
+
         {error && <p className="error">{error}</p>}
       </form>
 
