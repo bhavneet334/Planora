@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { generatePlan } from "./api/plans";
 import type { EventInput, GeneratedPlan } from "./types/plan";
+import heroImage from "./assets/hero-illustration.svg";
 import "./App.css";
 
 const emptyForm: EventInput = {
@@ -12,7 +13,24 @@ const emptyForm: EventInput = {
   vibe: "",
   food_preferences: "",
   indoor_outdoor: "Outdoor",
-}
+};
+
+const EXAMPLE_FORM: EventInput = {
+  event_type: "Birthday party",
+  city: "Chicago",
+  date: "2026-06-19",
+  guest_count: 26,
+  budget: 48000,
+  vibe: "Fun and lively",
+  food_preferences: "Vegetarian options",
+  indoor_outdoor: "Indoor",
+};
+
+const FEATURES = [
+  "Real venue search",
+  "Budget breakdown",
+  "Checklist & timeline",
+];
 
 function App() {
   const [form, setForm] = useState<EventInput>(emptyForm);
@@ -25,6 +43,16 @@ function App() {
     value: EventInput[K],
   ) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function fillExample() {
+    setForm(EXAMPLE_FORM);
+    setPlan(null);
+    setError(null);
+    document.querySelector(".event-form")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }
 
   useEffect(() => {
@@ -54,19 +82,40 @@ function App() {
 
   return (
     <main className="page">
-      <header>
-        <h1>Planora</h1>
-        <p>Tell us about your event and a starter plan.</p>
+      <header className="hero">
+        <div className="hero-copy">
+          <h1>Planora AI</h1>
+          <p className="hero-tagline">
+            Turn event details into a starter plan with real venues, a budget
+            breakdown, vendors, checklist, and timeline.
+          </p>
+          <ul className="feature-chips" aria-label="Features">
+            {FEATURES.map((feature) => (
+              <li key={feature}>{feature}</li>
+            ))}
+          </ul>
+          <button type="button" className="btn-example" onClick={fillExample}>
+            Try an example →
+          </button>
+        </div>
+        <div className="hero-visual">
+          <img
+            src={heroImage}
+            alt="Event plan with calendar and checklist"
+            className="hero-image"
+          />
+        </div>
       </header>
 
-      <form className="card form" onSubmit={handleSubmit}>
+      <form className="card form event-form" onSubmit={handleSubmit}>
         <h2>Event Details</h2>
 
-        <label> 
-          Event type 
-          <input value={form.event_type}
-          onChange={(e) => updateField('event_type', e.target.value)}
-          placeholder="Birthday party"
+        <label>
+          Event type
+          <input
+            value={form.event_type}
+            onChange={(e) => updateField("event_type", e.target.value)}
+            placeholder="Birthday party"
           />
         </label>
 
@@ -74,7 +123,7 @@ function App() {
           City
           <input
             value={form.city}
-            onChange={(e) => updateField('city', e.target.value)}
+            onChange={(e) => updateField("city", e.target.value)}
             placeholder="Toronto"
             required
           />
@@ -85,7 +134,7 @@ function App() {
           <input
             type="date"
             value={form.date}
-            onChange={(e) => updateField('date', e.target.value)}
+            onChange={(e) => updateField("date", e.target.value)}
             required
           />
         </label>
@@ -96,25 +145,27 @@ function App() {
             type="number"
             min={1}
             value={form.guest_count}
-            onChange={(e) => updateField('guest_count', Number(e.target.value))}
+            onChange={(e) => updateField("guest_count", Number(e.target.value))}
             required
           />
         </label>
+
         <label>
           Budget
           <input
             type="number"
             min={1}
             value={form.budget}
-            onChange={(e) => updateField('budget', Number(e.target.value))}
+            onChange={(e) => updateField("budget", Number(e.target.value))}
             required
           />
         </label>
+
         <label>
           Vibe
           <input
             value={form.vibe}
-            onChange={(e) => updateField('vibe', e.target.value)}
+            onChange={(e) => updateField("vibe", e.target.value)}
             placeholder="Elegant and cozy"
             required
           />
@@ -124,7 +175,7 @@ function App() {
           Food preferences
           <input
             value={form.food_preferences}
-            onChange={(e) => updateField('food_preferences', e.target.value)}
+            onChange={(e) => updateField("food_preferences", e.target.value)}
             placeholder="Vegetarian options"
             required
           />
@@ -134,7 +185,7 @@ function App() {
           Indoor / Outdoor
           <select
             value={form.indoor_outdoor}
-            onChange={(e) => updateField('indoor_outdoor', e.target.value)}
+            onChange={(e) => updateField("indoor_outdoor", e.target.value)}
           >
             <option value="Outdoor">Outdoor</option>
             <option value="Indoor">Indoor</option>
@@ -142,11 +193,11 @@ function App() {
         </label>
 
         <button type="submit" disabled={loading}>
-          {loading ? 'Generating...' : 'Generate plan'}
+          {loading ? "Generating..." : "Generate plan"}
         </button>
         {error && <p className="error">{error}</p>}
       </form>
-      
+
       {plan && (
         <section className="card results">
           <h2>Your plan</h2>
@@ -200,10 +251,7 @@ function App() {
           </div>
         </section>
       )}
-
     </main>
-
-
   );
 }
 
