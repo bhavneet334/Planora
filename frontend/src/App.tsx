@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { generatePlan } from "./api/plans";
+import { PlanResults } from "./components/PlanResults";
 import type { EventInput, GeneratedPlan } from "./types/plan";
 import heroImage from "./assets/hero-illustration.svg";
 import "./App.css";
@@ -247,59 +248,7 @@ function App() {
         {error && <p className="error">{error}</p>}
       </form>
 
-      {plan && (
-        <section className="card results">
-          <h2>Your plan</h2>
-          <div className="block">
-            <h3>Event summary</h3>
-            <p>{plan.event_summary}</p>
-          </div>
-          <div className="block">
-            <h3>Venue ideas</h3>
-            <ul>
-              {plan.venue_ideas.map((venue) => (
-                <li key={venue}>{venue}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="block">
-            <h3>Vendor suggestions</h3>
-            <ul>
-              {plan.vendor_suggestions.map((vendor) => (
-                <li key={vendor}>{vendor}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="block">
-            <h3>Budget breakdown</h3>
-            <ul>
-              {plan.budget_breakdown.map((item) => (
-                <li key={item.category}>
-                  <strong>{item.category}</strong>: ${item.amount} — {item.notes}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="block">
-            <h3>Checklist</h3>
-            <ul>
-              {plan.checklist.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="block">
-            <h3>Timeline</h3>
-            <ul>
-              {plan.timeline.map((item) => (
-                <li key={`${item.when}-${item.task}`}>
-                  <strong>{item.when}</strong>: {item.task}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
+      {plan && <PlanResults form={form} plan={plan} />}
     </main>
   );
 }
