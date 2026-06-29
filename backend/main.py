@@ -8,7 +8,7 @@ import uvicorn
 
 from routers.plans import router as plans_router
 
-app = FastAPI(title="Planora", version="1.0.0")
+app = FastAPI(title="Planora AI", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,7 +23,7 @@ app.include_router(plans_router)
 
 @app.get("/")
 def root():
-    return {"message":"Planora API is running"}
+    return {"message": "Planora AI API is running"}
 
 
 @app.get("/health")
