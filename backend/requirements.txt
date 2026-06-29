@@ -5,3 +5,5 @@ openai
 python-dotenv
 langgraph
 httpx
+supabase
+google-genai
